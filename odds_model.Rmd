@@ -1,5 +1,5 @@
 ---
-title: "ECON8015 Assignment 2"
+title: "Proportional Odds Logistic Regression"
 author: "Ken Sy"
 date: '2022-10-03'
 output: html_document
