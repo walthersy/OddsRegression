@@ -3,7 +3,7 @@
 
 See the HTML page here :arrow_right:   [link](https://htmlpreview.github.io/?https://github.com/walthersy/OddsRegression/blob/main/odds_model.html)
 
-This model predicts the odds of variables that has an order to it. In this case, the model is estimating whether an individual:
+Ordered logit models predict the odds of variables that has an order to it. In this project, the model is estimating whether an individual:
 - Will likely make no changes.. 
 - Will only make a few changes..
 - Will make some changes..
