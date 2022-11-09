@@ -1,7 +1,7 @@
 # Proportional Odds Logistics Regression in R
 ##### _also called "Ordered Logit Model"_
 
-See the HTML page here -> [link](https://htmlpreview.github.io/?https://github.com/walthersy/OddsRegression/blob/main/odds_model.html)
+See the HTML page here :arrow_right:   [link](https://htmlpreview.github.io/?https://github.com/walthersy/OddsRegression/blob/main/odds_model.html)
 
 This model predicts the odds of variables that has an order to it. In this case, the model is estimating whether an individual:
 - Will likely make no changes.. 
