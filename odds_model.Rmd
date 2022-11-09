@@ -1,0 +1,184 @@
+---
+title: "ECON8015 Assignment 2"
+author: "Ken Sy"
+date: '2022-10-03'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+# load packages for nicer table outputs
+library(sjPlot)
+library(sjmisc)
+library(sjlabelled)
+```
+
+
+## Reading in the data and setting up variables
+```{r}
+df <- read.csv("https://www.econ2041.duckdns.org/ECON8015/CCPol.csv", header = TRUE, 
+               stringsAsFactors = FALSE)
+names(df)[2] <- "party" # Rename to party for shorter name
+```
+
+```{r}
+# What are the climate behaviour responses?
+unique(df$CLIMATE_BEHAVIOR)
+```
+#### Order response variable accordingly
+```{r}
+df$CLIMATE_BEHAVIOR <- factor(df$CLIMATE_BEHAVIOR, 
+                              levels = c("No changes at all",
+                                         "Only a few changes",
+                                         "Some changes",
+                                         "A lot of changes"),
+                              ordered = TRUE)
+unique(df$CLIMATE_BEHAVIOR)
+```
+## Modelling
+Use MASS library's proportional odds logistic regression (polr)
+
+```{r}
+library(MASS)
+
+out <- polr(CLIMATE_BEHAVIOR~party+AGE+SEX, data=df,method = "logistic", Hess=TRUE)
+tab_model(out)
+```
+
+\newline
+
+Looking at the odds ratio from the model before, the following characteristics are significant in predicting whether a person is more likely to make more changes or not:  
+
+* People who feel close to the __Greens party__ has 41.3x higher odds of making more changes to their behaviour  
+* People who feel close to the __labor party__ has 16.9x higher odds of making more changes to their behaviour  
+* People who feel close to __other parties__ has 16.9x higher odds of making more changes to their behaviour  
+* People who feel close to the __independent party__ has 16.5x higher odds of making more changes to their behaviour  
+* People who do not feel close to any party has 8.5x higher odds of making more changes to their behaviour  
+* As people get older, their odds of making more changes to their behaviour slightly varies. They may be 1% less likely of making more changes to their behaviour  
+* People who identified as male has 31% lower odds of making more changes to their behaviour   
+
+
+### Model Diagnostics
+```{r}
+out.null <- polr(CLIMATE_BEHAVIOR~1, data=df,method = "logistic", Hess=TRUE)
+McF <- 1-logLik(out)/logLik(out.null)
+McF
+```
+Looking at the McFadden's Pseudo $R^2$, the model does not seem to be a great fit.
+
+### Check Probability Results
+```{r}
+library(kableExtra)
+# Results
+probs <- fitted(out)
+
+# look at what the probabilities look like for the first few lines of data
+kable(head(probs), "html", caption="Probabilities") %>%
+  kable_styling(bootstrap_options = c("striped", "hover"))
+```
+### Success Table
+```{r}
+# Success Table
+predicts <- predict(out)
+
+suc.tab <- table(actual = df$CLIMATE_BEHAVIOR, predictions = predicts)
+
+kable(suc.tab, "html", caption="Success Table") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  add_header_above(c(" " = 1, " Actual vs Predicted" = 4))
+```
+
+The model seems to be terrible at predicting who are only going to make a few changes. Instead of predicting only a few changes, it was mostly predicting that these people will make some changes. The model is also terrible at predicting who won't make any changes at all. Instead, it is predicting that the people who won't make a change will make some changes.
+
+### Answers
+
+\newline  
+\newline
+## Q1
+
+$H_0: \beta_{party} = 0$  
+$H_1: \beta_{party} \neq 0$
+
+```{r}
+# remodel without party
+out.r <- polr(CLIMATE_BEHAVIOR~AGE+SEX, data=df,method = "logistic", Hess=TRUE)
+
+# check likelihood ratio test
+LR <- -2*(logLik(out.r)-logLik(out))
+cv <- qchisq(.95, df=1)
+pval <- 1-pchisq(LR, df=1)
+
+LR
+cv
+pval
+```
+
+Using the Likelihood ratio test, we can see that the p-value is 0 which means we reject the null hypothesis that the party coefficient estimates are equal to 0. We therefore conclude that party is a relevant factor in predicting whether a person is likely to make changes to his or her behaviour in response to the global climate change.
+
+So yes, preparedness to make sacrifices to reduce effects of climate change varies with the party preferences of the individual. Based from the odds ratios, we can also say that people who feel close to the Greens party has 41.3x higher odds of making more changes to their behaviour. However, there is no evidence that a certain party preference of an individual would indicate whether the person will not make behavioural changes in response to the global climate change.  
+
+\newline
+## Q2
+
+$H_0: \beta_{AGE} = 0$  
+$H_1: \beta_{AGE} \neq 0$  
+
+```{r}
+# remodel without age
+out.r2 <- polr(CLIMATE_BEHAVIOR~party+SEX, data=df,method = "logistic", Hess=TRUE)
+
+# check likelihood ratio test
+LR <- -2*(logLik(out.r2)-logLik(out))
+cv <- qchisq(.95, df=1)
+pval <- 1-pchisq(LR, df=1)
+
+LR
+cv
+pval
+```
+  
+Since we have a p-value of 0 as well, we reject the null hypothesis and conclude that age is significant. 
+
+So yes, preparedness to make sacrifices to reduce effects of climate change varies slightly with age. As people get older, they are 1% less likely of making more changes to their behaviour.  
+
+\newline
+
+
+## Q3
+
+
+$H_0: \beta_{SEX} = 0$  
+$H_1: \beta_{SEX} \neq 0$  
+
+```{r}
+# remodel without sex
+out.r3 <- polr(CLIMATE_BEHAVIOR~party+AGE, data=df,method = "logistic", Hess=TRUE)
+
+# check likelihood ratio test
+LR <- -2*(logLik(out.r3)-logLik(out))
+cv <- qchisq(.95, df=1)
+pval <- 1-pchisq(LR, df=1)
+
+LR
+cv
+pval
+```
+
+Again, we reject the null hypothesis. We conclude that sex is relevant. Also, men are less likely to make sacrifices. They have 31% lower odds of making more changes to their behaviour.
+
+
+## Q4
+
+```{r}
+oldguy <- data.frame(party="Jacqui Lambie Network (JLN)", AGE=60, SEX="Male")
+pred <- predict(out, oldguy, "probs")
+
+kable(pred, "html", caption="Probability table for this old guy") %>%
+    kable_styling(bootstrap_options = c("striped", "hover"),full_width = F)
+```
+\newline
+\newline
+Based from the predictions, this old guy has an 8.9% chance of __not__ making any changes to the way he lives and works in order to reduce the impact of global climate change. 
